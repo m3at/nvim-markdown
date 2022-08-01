@@ -727,7 +727,7 @@ endfunction
 
 setlocal comments=b:> " blockquote
 setlocal formatoptions+=r " auto-insert > on newline
-setlocal conceallevel=2
+setlocal conceallevel=0
 setlocal viewoptions=folds,cursor
 setlocal foldtext=Foldtext_markdown()
 
