@@ -282,6 +282,31 @@ function M.backspace()
     vim.api.nvim_win_set_cursor(0, {cursor[1], 10000})
 end
 
+local function get_nearest_ancestor_node(node, type)
+    local cur_node = node
+    while cur_node ~= nil and cur_node:type() ~= type do
+        cur_node = cur_node:parent()
+    end
+    return cur_node
+end
+
+local function reenumerate_numbered_list()
+    local list_node = get_nearest_ancestor_node(vim.treesitter.get_node(), 'list')
+    if list_node == nil then
+        return
+    end
+    local idx = 1
+    for item, _ in list_node:iter_children()
+    do
+        local node = item:named_child { 0 }
+        if node:type():sub(1, 11) == 'list_marker' then
+            local sr, sc, er, ec = node:range()
+            local new_list_marker, _ = vim.api.nvim_buf_get_text(0, sr, sc, er, ec, {})[1]:gsub('%d+', idx)
+            vim.api.nvim_buf_set_text(0, sr, sc, er, ec, { new_list_marker })
+            idx = idx + 1
+        end
+    end
+end
 
 -- Responsible for auto-inserting new bullet points
 local function newline(insert_line, folded)
@@ -327,10 +352,7 @@ local function newline(insert_line, folded)
 
         if tonumber(marker) then
             marker = marker + 1
-            -- TODO: reoder list if there are other bullets below
-            --other_bullets = parse_list(bullet.start)
-            --for _, bullet_line in pairs(other_bullets) do
-            --    local incremented = vim.fn.getline(bullet_line):sub
+            vim.schedule(reenumerate_numbered_list)
         end
 
         local new_line = indent .. marker .. delimiter .. trailing_indent .. checkbox
