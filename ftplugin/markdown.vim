@@ -732,8 +732,6 @@ endfunction
 
 augroup Mkd
     autocmd!
-    autocmd BufWinLeave *.md mkview!
-    autocmd BufWinEnter *.md silent! loadview
     autocmd BufWinEnter *.md call s:MarkdownRefreshSyntax(1)
     " workaround, even without options in viewoptions it still saves this
     " so it needs to be reset every time so that someone who has set their own
