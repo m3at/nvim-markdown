@@ -9,20 +9,18 @@ local regex = {
 }
 
 -- to make M.backspace only trigger after a new line has been created
-local should_run_callback = false
+local markdown_ns_id = vim.api.nvim_create_namespace('markdown')
 local function key_callback(key)
     local backspace_term = vim.api.nvim_replace_termcodes("<BS>",true, true, true)
 
     -- It sends some key on o and O "<80><fd>h", which is some special key I didn't ask for.
-    if should_run_callback and not (key:len() == 3 and key ~= backspace_term) then
+    if not (key:len() == 3 and key ~= backspace_term) then
         if key == backspace_term then
             M.backspace()
         end
-        should_run_callback = false
     end
+    vim.on_key(nil, markdown_ns_id)
 end
-
-vim.on_key(key_callback)
 
 -- Iterates up or down to find the first occurence of a section marker.
 -- line_num is included in the search
@@ -359,7 +357,10 @@ local function newline(insert_line, folded)
         vim.cmd("startinsert")
         vim.fn.append(insert_line, new_line)
         vim.api.nvim_win_set_cursor(0,{insert_line+1, 1000000})
-        should_run_callback = true
+        vim.schedule(
+            function()
+                vim.on_key(key_callback, markdown_ns_id)
+            end)
     elseif folded then
         vim.cmd("startinsert")
         vim.fn.append(insert_line, "")
