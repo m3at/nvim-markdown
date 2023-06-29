@@ -16,7 +16,7 @@ local function get_nearest_ancestor_node(node, type)
     return cur_node
 end
 
-local function reenumerate_numbered_list()
+function M.reenumerate_numbered_list()
     local list_node = get_nearest_ancestor_node(vim.treesitter.get_node(), 'list')
     if list_node == nil then
         return
@@ -43,7 +43,7 @@ local function key_callback(key)
     if not (key:len() == 3 and key ~= backspace_term) then
         if key == backspace_term then
             M.backspace()
-            vim.schedule(reenumerate_numbered_list)
+            M.reenum_wrapper()
         end
     end
     vim.on_key(nil, markdown_ns_id)
@@ -349,7 +349,7 @@ local function newline(insert_line, folded)
 
         if tonumber(marker) then
             marker = marker + 1
-            vim.schedule(reenumerate_numbered_list)
+            M.reenum_wrapper()
         end
 
         local new_line = indent .. marker .. delimiter .. trailing_indent .. checkbox
@@ -718,7 +718,9 @@ function M.toggle_checkbox()
 end
 
 function M.reenum_wrapper()
-    vim.schedule(reenumerate_numbered_list)
+    vim.schedule(function()
+        vim.cmd [[ undojoin | call v:lua.require("markdown").reenumerate_numbered_list() ]]
+    end)
 end
 
 --function M.visual_convert_to_link()
