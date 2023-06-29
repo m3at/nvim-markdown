@@ -785,6 +785,9 @@ call <sid>Map('<Plug>Markdown_FollowLink', 'v:lua.require("markdown").follow_lin
 call <sid>Map('<Plug>Markdown_NewLineAbove', 'v:lua.require("markdown").new_line_above')
 call <sid>Map('<Plug>Markdown_NewLineBelow', 'v:lua.require("markdown").new_line_below')
 
+nnoremap <buffer> <silent> p p:lua require("markdown").reenum_wrapper()<CR>
+nnoremap <buffer> <silent> P P:lua require("markdown").reenum_wrapper()<CR>
+
 if !get(g:, 'vim_markdown_no_default_key_mappings', 0)
     call <sid>MapNotHasMapTo(']]', 'Markdown_MoveToNextHeader', 'nv')
     call <sid>MapNotHasMapTo('[[', 'Markdown_MoveToPreviousHeader', 'nv')
