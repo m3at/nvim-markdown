@@ -8,6 +8,32 @@ local regex = {
     ordered_list        = "^%s*%d+[%)%.]",
 }
 
+local function get_nearest_ancestor_node(node, type)
+    local cur_node = node
+    while cur_node ~= nil and cur_node:type() ~= type do
+        cur_node = cur_node:parent()
+    end
+    return cur_node
+end
+
+local function reenumerate_numbered_list()
+    local list_node = get_nearest_ancestor_node(vim.treesitter.get_node(), 'list')
+    if list_node == nil then
+        return
+    end
+    local idx = 1
+    for item, _ in list_node:iter_children()
+    do
+        local node = item:named_child { 0 }
+        if node:type():sub(1, 11) == 'list_marker' then
+            local sr, sc, er, ec = node:range()
+            local new_list_marker, _ = vim.api.nvim_buf_get_text(0, sr, sc, er, ec, {})[1]:gsub('%d+', idx)
+            vim.api.nvim_buf_set_text(0, sr, sc, er, ec, { new_list_marker })
+            idx = idx + 1
+        end
+    end
+end
+
 -- to make M.backspace only trigger after a new line has been created
 local markdown_ns_id = vim.api.nvim_create_namespace('markdown')
 local function key_callback(key)
@@ -17,6 +43,7 @@ local function key_callback(key)
     if not (key:len() == 3 and key ~= backspace_term) then
         if key == backspace_term then
             M.backspace()
+            vim.schedule(reenumerate_numbered_list)
         end
     end
     vim.on_key(nil, markdown_ns_id)
@@ -271,39 +298,11 @@ function M.backspace()
     if folded then
         newline = string.rep(" ", indent_length - 2) .. "a"
     else
-        -- TODO: reorder list when deleting ordered bullet
-        -- Need to append a letter since the backspace is handled normally after this function
         newline = string.rep(" ", indent_length) .. "a"
     end
 
     vim.fn.setline(".", newline)
     vim.api.nvim_win_set_cursor(0, {cursor[1], 10000})
-end
-
-local function get_nearest_ancestor_node(node, type)
-    local cur_node = node
-    while cur_node ~= nil and cur_node:type() ~= type do
-        cur_node = cur_node:parent()
-    end
-    return cur_node
-end
-
-local function reenumerate_numbered_list()
-    local list_node = get_nearest_ancestor_node(vim.treesitter.get_node(), 'list')
-    if list_node == nil then
-        return
-    end
-    local idx = 1
-    for item, _ in list_node:iter_children()
-    do
-        local node = item:named_child { 0 }
-        if node:type():sub(1, 11) == 'list_marker' then
-            local sr, sc, er, ec = node:range()
-            local new_list_marker, _ = vim.api.nvim_buf_get_text(0, sr, sc, er, ec, {})[1]:gsub('%d+', idx)
-            vim.api.nvim_buf_set_text(0, sr, sc, er, ec, { new_list_marker })
-            idx = idx + 1
-        end
-    end
 end
 
 -- Responsible for auto-inserting new bullet points
