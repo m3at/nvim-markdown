@@ -717,6 +717,10 @@ function M.toggle_checkbox()
     end
 end
 
+function M.reenum_wrapper()
+    vim.schedule(reenumerate_numbered_list)
+end
+
 --function M.visual_convert_to_link()
 --    local cursor = vim.api.nvim_win_get_cursor()
 --    local start = vim.api.nvim_buf_get_mark("<")
