@@ -44,7 +44,7 @@ local function find_header_or_list(line_num)
     end
 
     while line_num > 0 and line_num <= line_count do
-        local line = vim.fn.getline(line_num)
+        line = vim.fn.getline(line_num)
         for name, pattern in pairs(regex) do
             if line:match(pattern) then
                 if (name == "setex_equals_header" or name == "setex_line_header") then
@@ -67,7 +67,7 @@ local function find_link_under_cursor()
     local cursor = vim.api.nvim_win_get_cursor(0)
     local line = vim.fn.getline(cursor[1])
     local column = cursor[2] + 1
-    local link_start, link_stop, link
+    local link_start, link_stop, text, url
     local start = 1
     repeat
         -- repeats until it finds a link the cursor is inside or ends as nil
@@ -229,7 +229,7 @@ local function parse_header(line_num)
     -- iterate down to find bottom
     local line_count = vim.api.nvim_buf_line_count(0)
     while true do
-        local line = vim.fn.getline(iter)
+        line = vim.fn.getline(iter)
         if line:match(regex.atx_header) then
             header.stop = iter - 1
             break
@@ -399,7 +399,7 @@ function M.new_line_below()
 
         -- Normal return if in the middle of a line, or there is no bullet
         if column < #line or not bullet then
-            key = vim.api.nvim_replace_termcodes("<CR>", true, false, true)
+            local key = vim.api.nvim_replace_termcodes("<CR>", true, false, true)
             vim.api.nvim_feedkeys(key, "n", true)
             return
         end
