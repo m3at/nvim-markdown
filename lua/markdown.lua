@@ -9,10 +9,13 @@ local regex = {
 }
 
 local function get_nearest_ancestor_node(node, type)
-    local cur_node = node
-    while cur_node ~= nil and cur_node:type() ~= type do
-        cur_node = cur_node:parent()
+    if not node then
+        return nil
     end
+    local cur_node = node
+    repeat
+        cur_node = cur_node:parent()
+    until cur_node == nil or cur_node:type() == type
     return cur_node
 end
 
