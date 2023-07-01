@@ -24,17 +24,20 @@ function M.reenumerate_numbered_list()
     if list_node == nil then
         return
     end
-    local idx = 1
-    for item, _ in list_node:iter_children()
-    do
-        local node = item:named_child { 0 }
-        if node:type():sub(1, 11) == 'list_marker' then
-            local sr, sc, er, ec = node:range()
-            local new_list_marker, _ = vim.api.nvim_buf_get_text(0, sr, sc, er, ec, {})[1]:gsub('%d+', idx)
-            vim.api.nvim_buf_set_text(0, sr, sc, er, ec, { new_list_marker })
-            idx = idx + 1
+    repeat
+        local idx = 1
+        for item, _ in list_node:iter_children()
+        do
+            local node = item:named_child { 0 }
+            if node:type():sub(1, 11) == 'list_marker' then
+                local sr, sc, er, ec = node:range()
+                local new_list_marker, _ = vim.api.nvim_buf_get_text(0, sr, sc, er, ec, {})[1]:gsub('%d+', idx)
+                vim.api.nvim_buf_set_text(0, sr, sc, er, ec, { new_list_marker })
+                idx = idx + 1
+            end
         end
-    end
+        list_node = get_nearest_ancestor_node(list_node, 'list')
+    until not list_node
 end
 
 function M.deindent_list_item()
