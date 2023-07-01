@@ -37,6 +37,32 @@ function M.reenumerate_numbered_list()
     end
 end
 
+function M.deindent_list_item()
+    local cur_node = vim.treesitter.get_node()
+    local list_node = get_nearest_ancestor_node(cur_node, 'list')
+    local parent_list_node
+    if list_node then
+        parent_list_node = get_nearest_ancestor_node(list_node, 'list')
+        if not parent_list_node then
+            return
+        end
+    else
+        return
+    end
+    local psr, psc, per, pec = parent_list_node:named_child({ 0 }):named_child({ 0 }):range()
+    local parent_marker = vim.api.nvim_buf_get_text(0, psr, psc, per, pec, {})[1]
+    local csr, csc, cer, cec
+    if cur_node:type() ~= 'list_item' then
+        csr, csc, cer, cec = get_nearest_ancestor_node(cur_node, 'list_item'):named_child({ 0 }):range()
+    else
+        csr, csc, cer, cec = cur_node:named_child({ 0 }):range()
+    end
+    assert(psc <= csc)
+    vim.api.nvim_buf_set_text(0, csr, psc, cer, cec, { parent_marker })
+    print(parent_marker)
+    M.reenum_wrapper()
+end
+
 -- to make M.backspace only trigger after a new line has been created
 local markdown_ns_id = vim.api.nvim_create_namespace('markdown')
 local function key_callback(key)
