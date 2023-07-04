@@ -466,6 +466,7 @@ function M.jump()
         line = line .. bullet.marker .. bullet.delimiter .. string.rep(" ", bullet.trailing_indent) .. checkbox
         vim.api.nvim_buf_set_lines(0, cursor[1] - 1, cursor[1], true, {line})
         vim.api.nvim_win_set_cursor(0,{cursor[1], 1000000})
+        M.reenum_wrapper()
     elseif link and cursor[2] >= link.start and cursor[2] <= link.stop then
         --error(vim.inspect({cursor,link}))
         local relative_position = cursor[2] - link.start + 1
@@ -749,9 +750,13 @@ function M.toggle_checkbox()
     end
 end
 
-function M.reenum_wrapper()
+function M.reenum_wrapper(autocmd)
     vim.schedule(function()
-        vim.cmd [[ undojoin | call v:lua.require("markdown").reenumerate_numbered_list() ]]
+        if autocmd and vim.v.operator == 'y' then
+            M.reenumerate_numbered_list()
+        else
+            vim.cmd [[ undojoin | call v:lua.require("markdown").reenumerate_numbered_list() ]]
+        end
     end)
 end
 

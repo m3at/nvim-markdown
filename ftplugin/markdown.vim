@@ -742,7 +742,7 @@ augroup Mkd
     autocmd InsertEnter,InsertLeave *.md call s:MarkdownRefreshSyntax(0)
     autocmd CursorHold,CursorHoldI *.md call s:MarkdownRefreshSyntax(0)
 
-    autocmd TextYankPost *.md call v:lua.require("markdown").reenum_wrapper()
+    autocmd TextYankPost *.md call v:lua.require("markdown").reenum_wrapper(v:true)
 augroup END
 
 function! Foldtext_markdown()
