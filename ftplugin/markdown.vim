@@ -508,6 +508,30 @@ function! s:HeaderDecrease(line1, line2, ...)
     endfor
 endfunction
 
+" Format table under cursor.
+"
+" Depends on Tabularize.
+"
+function! s:TableFormat()
+    let l:pos = getpos('.')
+    normal! {
+    " Search instead of `normal! j` because of the table at beginning of file edge case.
+    call search('|')
+    normal! j
+    " Remove everything that is not a pipe, colon or hyphen next to a colon othewise
+    " well formated tables would grow because of addition of 2 spaces on the separator
+    " line by Tabularize /|.
+    let l:flags = (&gdefault ? '' : 'g')
+    execute 's/\(:\@<!-:\@!\|[^|:-]\)//e' . l:flags
+    execute 's/--/-/e' . l:flags
+    Tabularize /\(\\\)\@<!|
+    " Move colons for alignment to left or right side of the cell.
+    execute 's/:\( \+\)|/\1:|/e' . l:flags
+    execute 's/|\( \+\):/|:\1/e' . l:flags
+    execute 's/|:\?\zs[ -]\+\ze:\?|/\=repeat("-", len(submatch(0)))/' . l:flags
+    call setpos('.', l:pos)
+endfunction
+
 " Parameters:
 "
 " - step +1 for right, -1 for left
@@ -600,6 +624,7 @@ endf
 command! -buffer -range=% HeaderDecrease call s:HeaderDecrease(<line1>, <line2>)
 command! -buffer -range=% HeaderIncrease call s:HeaderDecrease(<line1>, <line2>, 1)
 command! -buffer -range=% SetexToAtx call s:SetexToAtx(<line1>, <line2>)
+command! -buffer TableFormat call s:TableFormat()
 command! -buffer Toc call s:Toc()
 command! -buffer Toch call s:Toc('horizontal')
 command! -buffer Tocv call s:Toc('vertical')
@@ -730,9 +755,8 @@ setlocal formatoptions+=r " auto-insert > on newline
 setlocal conceallevel=0
 setlocal viewoptions=folds,cursor
 setlocal foldtext=Foldtext_markdown()
+setlocal foldopen-=undo
 
-" Map in both normal and visual modes.
-"
 function! s:Map(lhs,rhs)
     execute 'nnoremap <buffer> <silent> ' . a:lhs . ' :call ' . a:rhs . '()<cr>'
     execute 'vnoremap <buffer> <silent> ' . a:lhs . ' <cmd>call ' . a:rhs .'()<cr>'
@@ -740,11 +764,11 @@ function! s:Map(lhs,rhs)
 endfunction
 
 function! s:MapNotHasMapTo(lhs, rhs, modes)
-    if !hasmapto('<Plug>' . a:rhs)
-        for mode in split(a:modes, '\zs')
+    for mode in split(a:modes, '\zs')
+        if !hasmapto('<Plug>' . a:rhs, mode)
             execute mode . 'map <buffer> ' . a:lhs . ' <Plug>' . a:rhs
-        endfor
-    endif
+        endif
+    endfor
 endfunction
 
 call <sid>Map('<Plug>Markdown_MoveToNextHeader', '<sid>MoveToNextHeader')
@@ -758,6 +782,8 @@ call <sid>Map('<Plug>Markdown_Fold', 'v:lua.require("markdown").fold')
 call <sid>Map('<Plug>Markdown_Jump', 'v:lua.require("markdown").jump')
 call <sid>Map('<Plug>Markdown_CreateLink', 'v:lua.require("markdown").create_link')
 call <sid>Map('<Plug>Markdown_FollowLink', 'v:lua.require("markdown").follow_link')
+call <sid>Map('<Plug>Markdown_NewLineAbove', 'v:lua.require("markdown").new_line_above')
+call <sid>Map('<Plug>Markdown_NewLineBelow', 'v:lua.require("markdown").new_line_below')
 
 if !get(g:, 'vim_markdown_no_default_key_mappings', 0)
     call <sid>MapNotHasMapTo(']]', 'Markdown_MoveToNextHeader', 'nv')
@@ -766,14 +792,12 @@ if !get(g:, 'vim_markdown_no_default_key_mappings', 0)
     call <sid>MapNotHasMapTo('[]', 'Markdown_MoveToPreviousSiblingHeader', 'nv')
     call <sid>MapNotHasMapTo(']u', 'Markdown_MoveToParentHeader', 'nv')
     call <sid>MapNotHasMapTo(']c', 'Markdown_MoveToCurHeader', 'nv')
-    call <sid>MapNotHasMapTo('<C-c>', 'Markdown_Checkbox', 'ni')
+    call <sid>MapNotHasMapTo('<C-c>', 'Markdown_Checkbox', 'n')
     call <sid>MapNotHasMapTo('<TAB>', 'Markdown_Fold', 'n')
     call <sid>MapNotHasMapTo('<TAB>', 'Markdown_Jump', 'i')
     call <sid>MapNotHasMapTo('<C-k>', 'Markdown_CreateLink', 'vi')
     call <sid>MapNotHasMapTo('<CR>', 'Markdown_FollowLink', 'n')
+    call <sid>MapNotHasMapTo('o', 'Markdown_NewLineBelow', 'n')
+    call <sid>MapNotHasMapTo('O', 'Markdown_NewLineAbove', 'n')
+    call <sid>MapNotHasMapTo('<CR>', 'Markdown_NewLineBelow', 'i')
 endif
-
-" overwrites inbuilt bindings, so shouldn't be editable
-imap <buffer> <CR> <cmd>lua require("markdown").newline("return")<CR>
-nmap <buffer> o <cmd>lua require("markdown").newline("o")<CR>
-nmap <buffer> O <cmd>lua require("markdown").newline("O")<CR>
